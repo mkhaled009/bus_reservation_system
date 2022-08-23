@@ -1,9 +1,10 @@
 process.env.NODE_ENV = 'test';
 import { initDBWithAdmin, clearDestinations, dropDB, jwtSecret, clearDB, createAdmin, initDBWithData } from "../utils";
 import * as jwt from "jsonwebtoken";
+import server from "../";
 let chai = require('chai');
 let chaiHttp = require('chai-http');
-let Server = require('../');
+
 let should = chai.should();
 chai.use(chaiHttp);
 
@@ -14,7 +15,7 @@ describe(" reservation api", () => {
       expiresIn: "1h",
     });
 
-  describe("POST /api/Reservations",  () => {
+  describe("POST /api/Reservations/create",  () => {
     it("It should POST a new reservation", async(done) => {
       const newreservation = {
         seatnumbers: ["A8"],
@@ -22,8 +23,8 @@ describe(" reservation api", () => {
         destination: "aswan"
 
       };
-      chai.request(Server)
-        .post("/api/Reservations")
+      chai.request(server)
+        .post("/Reservations/create")
         .set('auth', token)
         .send(newreservation)
         .end((err, response) => {
@@ -43,23 +44,24 @@ describe(" reservation api", () => {
         "confirmed": "true"
 
       };
-      chai.request(Server)
-        .post("/api/Reservations/confirm")
-        .set('auth', token)
+      chai.request(server)
+       
+        .post("/Reservations/confirm")
         .send(newconfirmation)
+        .set('auth', token)
         .end((err, response) => {
-          response.should.have.status(201);
-          response.body.should.be.a('array');
-          response.body.length.should.be.eq(1);
-          done();
+        response.should.have.status(201);
+        response.body.should.be.a('array');
+         response.body.length.should.be.eq(1);
+         done();
         })
     });
   });
 
   describe('bus reservation api',  () => {
     it("sshould return most freq destnation for users /api/reservation/getfreq", async (done) => {
-      chai.request(Server)
-        .get("api/Reservations/getfreq")
+      chai.request(server)
+        .get("/Reservations/getfreq")
         .set('auth', newToken)
         .end((err, res) => {
           res.should.have.status(201);

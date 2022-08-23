@@ -1,17 +1,17 @@
 process.env.NODE_ENV = 'test';
 import { initDBWithAdmin, clearDestinations, dropDB } from "../utils"
+import server from "../";
 let chai = require('chai');
 let chaiHttp = require('chai-http');
-let Server = require('../');
 let should = chai.should();
 chai.use(chaiHttp);
 
 
-describe("/api/seats", () => {
-  it("should return all seats /api/seats", async (done)  =>{
+describe("/api/Seats", () => {
+  it("should return all seats", async (done)  =>{
 
-    chai.request(Server)
-      .get("/api/seats")
+    chai.request(server)
+      .get('/Seats')
       .end((err, res) => {
         res.should.have.status(201);
         res.body.should.be.a('array');

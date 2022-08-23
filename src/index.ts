@@ -18,14 +18,11 @@ class Server {
 
   constructor() {
     this.express = express();
-    
-   if (process.env.NODE_ENV !== "test") {
     this.configuration();
-      this.start();
-      this.routes();
-
-   }
+    this.start();
+    this.routes();
   }
+
 
   public configuration() {
     this.express.use(cors());
@@ -56,6 +53,8 @@ class Server {
       console.log(`server started at http://localhost:${port}`);
     });
   }
+
+  
 }
-module.exports = Server;
+
 export default new Server().express;
