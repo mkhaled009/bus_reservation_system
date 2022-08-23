@@ -16,9 +16,9 @@ export class DestinationController {
     try {
       const destinations = await this.destinationRepository.find({
         order: {
-          id: "DESC",
+          id: "asc",
           seats: {
-            seatnumber: "DESC",
+            seatnumber: "asc",
           },
         },
         relations: {
@@ -31,9 +31,7 @@ export class DestinationController {
     }
   };
 
-  //  public routes() {
-  //  this.router.get("/", [checkAuth, checkRole(["ADMIN", "USER"])], this.index);
-  // }
+
   public routes() {
     this.router.get("/", this.index);
   }

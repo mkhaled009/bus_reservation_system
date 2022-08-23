@@ -62,10 +62,23 @@ export class ReservationController {
 
   public create = async (req: Request, res: Response) => {
     const { destination, seatnumbers } = req.body;
-
-
     const userId = res.locals.jwtPayload.userId;
 
+
+    type reservationresult = {
+      ticketnumber: number,
+      destination: string,
+      seatnumber: string,
+      coast: number,
+      email: string,
+      Status: string,
+      Error: string
+    };
+    var Allreservationresult: reservationresult[] = [];
+
+
+    var discount = 0;
+    // validate user 
     let user;
     try {
       user = await this.userRepository.findOneOrFail({
@@ -77,7 +90,7 @@ export class ReservationController {
       res.status(400).send("Provide valid user for reservation");
       return;
     }
-
+    // validate  destantion
     let dest;
     try {
       dest = await this.destinationRepository.findOneOrFail({
@@ -89,7 +102,7 @@ export class ReservationController {
       res.status(400).send("Provide valid destination for reservation");
       return;
     }
-
+    // check for buss state
     let runningreservation;
     try {
       runningreservation = await this.reservationRepository.find({
@@ -117,100 +130,122 @@ export class ReservationController {
       res.status(400).send("no avaliable sessions for reservation on this bus");
       return;
     }
+    // create neew reservation for each seat     
+    if (seatnumbers.length > 5) discount = 10
+    for (const seatnumber of seatnumbers) {
+      //validate seat 
+      let seat;
+      try {
+        seat = await this.seatrepository.findOneOrFail({
+          where: {
+            seatnumber: String(seatnumber),
+          },
+        });
 
-    var Allresult = [];
-    var  discount = 0;
-    if(seatnumbers.length > 5) discount = 10
-    for (const seatnumber of seatnumbers){
+        const reservation = new ReservationEntity();
+        reservation.cost = dest.cost - discount;
+        reservation.destination = dest;
+        reservation.busid = dest.busid;
+        reservation.seatnumber = seatnumber;
+        const date = new Date();
+        reservation.createdAt = date.toLocaleDateString();
+        reservation.confirmed = false;
+        reservation.user = user;
 
-    let seat;
-    try {
-      seat = await this.seatrepository.findOneOrFail({
-        where: {
-          seatnumber: String(seatnumber),
-        },
-      });
-    
-    const reservation = new ReservationEntity();
-    reservation.cost = dest.cost- discount ;
-    reservation.destination = dest;
-    reservation.busid = dest.busid;
-    reservation.seatnumber = seatnumber;
-    const date = new Date();
-    reservation.createdAt = date.toLocaleDateString();
-    reservation.confirmed = false;
-    reservation.user = user;
+        const errors = await validate(reservation);
+        if (errors.length > 0) {
+          res.status(400).send(errors);
+          return;
+        }
 
-    const errors = await validate(reservation);
-    if (errors.length > 0) {
-      res.status(400).send(errors);
-      return;
-    }
 
-   
-      await this.reservationRepository.save(reservation);
-      const result: any = {
-        ticketnumber: reservation.ticketnumber,
-        destination: reservation.destination.name,
-        seatnumber: reservation.seatnumber,
-        coast: reservation.cost,
-        email: reservation.user.Email,
-        Status: "pinding Confirmation!",
-      };
+        await this.reservationRepository.save(reservation);
+        const result: reservationresult = {
+          ticketnumber: reservation.ticketnumber,
+          destination: reservation.destination.name,
+          seatnumber: reservation.seatnumber,
+          coast: reservation.cost,
+          email: reservation.user.Email,
+          Status: "pending Confirmation!",
+          Error: '',
 
-    Allresult.push(result)
+        };
+        Allreservationresult.push(result)
       }
-    catch (e) {
-      const result: any = {
-        seatnumber: seatnumber,
-        Status: "reservation failed , seat taken  or not valid ",
-      };
-      Allresult.push(result)
+      catch (e) {
+        const result: reservationresult = {
+          seatnumber: seatnumber,
+          Status: "reservation failed , seat taken  or not valid ",
+          ticketnumber: 0,
+          destination: "",
+          coast: 0,
+          email: "",
+          Error: ""
+        };
+        Allreservationresult.push(result)
+      }
     }
-  }
-  res.status(201).send(Allresult);
+    res.status(201).send(Allreservationresult);
   };
 
   public confirm = async (req: Request, res: Response) => {
     const { ticketnumbers, confirmed } = req.body;
     const userId = res.locals.jwtPayload.userId;
     let reservation;
-      for (const ticketnumber of ticketnumbers){
-        try {
-          
-          reservation = await this.reservationRepository.findOneOrFail({
-            relations: {
-              user: true,
-            },
-            where: {
-              ticketnumber: Number(ticketnumber),
-            },
-          });
+    type confirmationresult = {
+      ticketnumber: string,
+      Status: string,
+    };
+    var Allconfirmationresult: confirmationresult[] = [];
 
-          if (reservation.user.id != userId) {
-            res.status(404).send("reservation not found : ticket number " + ticketnumber);
-          }
-    } catch (error) {
-      res.status(404).send("reservation not found : ticket number " + ticketnumber);
-      return;
-    }
-    reservation.confirmed = confirmed;
+    for (const ticketnumber of ticketnumbers) {
+      try {
 
-    try {
-      await this.reservationRepository.save(reservation);
-    } catch (e) {
-      res.status(400).send("Could not update reservation");
-      return;
+        reservation = await this.reservationRepository.findOneOrFail({
+          relations: {
+            user: true,
+          },
+          where: {
+            ticketnumber: Number(ticketnumber),
+          },
+        });
+
+        if (reservation.user.id != userId) {
+
+          const result: confirmationresult = {
+            ticketnumber: ticketnumber,
+            Status: "confrimation failed , ticketnumber not valid ",
+          };
+          Allconfirmationresult.push(result)
+        }
+        else {
+
+          reservation.confirmed = confirmed;
+
+          await this.reservationRepository.save(reservation);
+          const result: confirmationresult = {
+            ticketnumber: ticketnumber,
+            Status: "confrimation completed  , thanks you! ",
+          };
+          Allconfirmationresult.push(result);
+        }
+      } catch (e) {
+
+        const result: confirmationresult = {
+          ticketnumber: ticketnumber,
+          Status: "confrimation failed , unable to update reservation, ticketnumber not valid",
+        };
+        Allconfirmationresult.push(result)
+      }
     }
-  }
-    res.status(204).send();
+    res.status(201).send(Allconfirmationresult);
   };
 
 
   public routes() {
     this.router.get(
       "/getfreq",
-      [checkAuth, checkRole(["ADMIN", "USER"])],
+      [checkAuth, checkRole(["ADMIN"])],
       this.getfreq
     );
     this.router.get(

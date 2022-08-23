@@ -18,11 +18,13 @@ class Server {
 
   constructor() {
     this.express = express();
+    
+   if (process.env.NODE_ENV !== "test") {
     this.configuration();
-    this.routes();
-    if (process.env.NODE_ENV !== "test") {
       this.start();
-    }
+      this.routes();
+
+   }
   }
 
   public configuration() {
@@ -32,33 +34,21 @@ class Server {
   }
 
   public async routes() {
-    if (process.env.NODE_ENV !== "test") {
+   /*  if (process.env.NODE_ENV !== "test") { */
       initDBWithData().then(() => {
         this.express.use(`/api/users/`, new UserController().router);
         this.express.use(`/api/Seats/`, new SeatController().router);
-        this.express.use(
-          `/api/Reservations/`,
-          new ReservationController().router
-        );
-        this.express.use(
-          `/api/destinations/`,
-          new DestinationController().router
-        );
+        this.express.use(`/api/Reservations/`,new ReservationController().router );
+        this.express.use(`/api/destinations/`,new DestinationController().router);
         this.express.use(`/api/auth/`, new AuthController().router);
       });
-    } else {
+  /*   } else {
       this.express.use(`/api/users/`, new UserController().router);
       this.express.use(`/api/Seats/`, new SeatController().router);
-      this.express.use(
-        `/api/Reservations/`,
-        new ReservationController().router
-      );
-      this.express.use(
-        `/api/destinations/`,
-        new DestinationController().router
-      );
+      this.express.use(`/api/Reservations/`,new ReservationController().router);
+      this.express.use(`/api/destinations/`,new DestinationController().router);
       this.express.use(`/api/auth/`, new AuthController().router);
-    }
+    } */
   }
 
   public start() {
@@ -67,5 +57,5 @@ class Server {
     });
   }
 }
-
+module.exports = Server;
 export default new Server().express;
