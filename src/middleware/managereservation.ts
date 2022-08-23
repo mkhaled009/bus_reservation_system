@@ -18,7 +18,7 @@ myEmitter.on("cleanUp", function (userId: string, token: string) {
     console.log(
       "unconfirmed reservations for user id :" +
         userId +
-        "cancelled due to session expiration"
+        " cancelled due to session expiration"
     );
   }, 120 * 1000);
   console.log("Timer ID : " + timerID);
