@@ -34,7 +34,7 @@ docker-compose up
 npm run dev
 ```
 
-# Run tests against Postgres DB with jest & supertest
+# Run tests 
 ```
 npm run test
 ```
