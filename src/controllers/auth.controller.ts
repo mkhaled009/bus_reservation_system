@@ -36,7 +36,7 @@ export class AuthController {
     const token = jwt.sign(
       { userId: user.id, username: user.Email },
       process.env.JWT_SECRET as string,
-      { expiresIn: "2h" }
+      { expiresIn: "2m" }
     );
 
     res.send(token);
